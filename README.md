@@ -102,7 +102,9 @@ This compiles `morning-sports-brief/dist/latest.html` with inlined CSS and a bas
 
 ## GitHub Setup (Automated Daily Cloud Builds)
 
-You can push the `morning-sports-brief/` directory (or download it via the **Download Repository (.zip)** button in the **Deploy & Mac** tab) to its own GitHub repository:
+This repository already includes `/.github/workflows/daily_brief.yml` at the **repository root** (configured to run inside `morning-sports-brief/`), so pushing the entire repository works out of the box. *(If you instead export `morning-sports-brief.zip` from the **Deploy & Mac** tab into a separate standalone repository, `morning-sports-brief/.github/workflows/daily_brief.yml` becomes that repo's root workflow.)*
+
+> **Note:** GitHub Actions only discovers workflows placed in `/.github/workflows/` at the root of the repository on your default branch (typically `main`).
 
 ### 1. Enable GitHub Pages
 1. Go to **Settings → Pages** in your GitHub repository.
