@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.user.sportsbrief</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/YOUR_MAC_USER/morning-sports-brief/print_brief.sh</string>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>BRIEF_URL</key>
+        <string>https://YOUR_GITHUB_USERNAME.github.io/morning-sports-brief/latest.html</string>
+        <key>PRINTER_NAME</key>
+        <string>YOUR_CUPS_PRINTER_NAME</string>
+    </dict>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>6</integer>
+        <key>Minute</key>
+        <integer>25</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/sportsbrief.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/sportsbrief.err.log</string>
+</dict>
+</plist>

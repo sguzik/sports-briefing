@@ -1,0 +1,182 @@
+[
+  {
+    "id": "fact-01",
+    "category": "Basketball",
+    "fact": "When James Naismith invented basketball in 1891, players used real peach baskets for hoops—someone had to climb a ladder to get the ball out after every score!"
+  },
+  {
+    "id": "fact-02",
+    "category": "Baseball",
+    "fact": "A regulation baseball has exactly 108 double stitches of red waxed thread holding its cowhide cover together."
+  },
+  {
+    "id": "fact-03",
+    "category": "Soccer",
+    "fact": "A professional soccer player runs an average of 6 to 7 miles during a single 90-minute match."
+  },
+  {
+    "id": "fact-04",
+    "category": "Hockey",
+    "fact": "NHL hockey pucks are frozen before every game so they glide smoothly across the ice instead of bouncing."
+  },
+  {
+    "id": "fact-05",
+    "category": "WNBA",
+    "fact": "The New York Liberty was one of the original eight WNBA franchises when the league tipped off its very first season in 1997."
+  },
+  {
+    "id": "fact-06",
+    "category": "Football",
+    "fact": "NFL footballs are nicknamed 'pigskins,' even though they have actually been made from cowhide leather for decades."
+  },
+  {
+    "id": "fact-07",
+    "category": "Basketball",
+    "fact": "Muggsy Bogues played 14 seasons in the NBA despite standing 5 feet 3 inches tall—the shortest player in league history."
+  },
+  {
+    "id": "fact-08",
+    "category": "Baseball",
+    "fact": "In 1920, Babe Ruth hit 54 home runs in a single season—more than every entire other team in the American League!"
+  },
+  {
+    "id": "fact-09",
+    "category": "Olympics",
+    "fact": "The five interlocking Olympic rings represent the five inhabited continents joined together by friendly competition."
+  },
+  {
+    "id": "fact-10",
+    "category": "Soccer",
+    "fact": "The traditional black-and-white soccer ball design was created for the 1970 World Cup so viewers on black-and-white TVs could see the ball spin."
+  },
+  {
+    "id": "fact-11",
+    "category": "Hockey",
+    "fact": "The Stanley Cup is the only major pro sports trophy where every winning player's name is engraved right onto the cup itself."
+  },
+  {
+    "id": "fact-12",
+    "category": "Baseball",
+    "fact": "Before every Major League Baseball game, umpires rub brand-new baseballs with special Lena Blackburne mud from New Jersey so pitchers can grip them safely."
+  },
+  {
+    "id": "fact-13",
+    "category": "Basketball",
+    "fact": "Dribbling wasn't allowed in early basketball! Players had to pass the ball from wherever they caught it."
+  },
+  {
+    "id": "fact-14",
+    "category": "Football",
+    "fact": "The first Super Bowl in 1967 had thousands of empty seats—and tickets cost just $12!"
+  },
+  {
+    "id": "fact-15",
+    "category": "WNBA",
+    "fact": "A standard WNBA basketball has a slightly smaller 28.5-inch circumference than an NBA ball (29.5 inches), making ball-handling and shooting crisp."
+  },
+  {
+    "id": "fact-16",
+    "category": "Soccer",
+    "fact": "Before penalty shootouts were invented in 1970, tied knockout soccer matches were sometimes decided by a coin flip!"
+  },
+  {
+    "id": "fact-17",
+    "category": "Track & Field",
+    "fact": "At top speed, Usain Bolt's stride covered nearly 8 feet in a single step—about the length of a ping-pong table."
+  },
+  {
+    "id": "fact-18",
+    "category": "Baseball",
+    "fact": "The longest MLB game ever played lasted 26 innings between the Brooklyn Dodgers and Boston Braves in 1920—and ended in a 1-1 tie because it got too dark!"
+  },
+  {
+    "id": "fact-19",
+    "category": "Basketball",
+    "fact": "The NBA added the 24-second shot clock in 1954 because teams used to stall by passing the ball around without shooting for minutes at a time."
+  },
+  {
+    "id": "fact-20",
+    "category": "Hockey",
+    "fact": "Goalie masks didn't become common in the NHL until 1959, when Jacques Plante wore one after getting hit in the face by a puck."
+  },
+  {
+    "id": "fact-21",
+    "category": "Football",
+    "fact": "An NFL football field is 120 yards long in total—100 yards of playing field plus two 10-yard end zones."
+  },
+  {
+    "id": "fact-22",
+    "category": "Soccer",
+    "fact": "Soccer goalkeepers weren't required to wear a different colored jersey from their teammates until 1913."
+  },
+  {
+    "id": "fact-23",
+    "category": "Baseball",
+    "fact": "A fastball thrown at 95 mph reaches home plate in about 0.4 seconds—barely longer than the blink of an eye."
+  },
+  {
+    "id": "fact-24",
+    "category": "Basketball",
+    "fact": "Madison Square Garden, home of the New York Knicks, is the oldest arena in the NBA, having opened its current building in 1968."
+  },
+  {
+    "id": "fact-25",
+    "category": "Olympics",
+    "fact": "Olympic gold medals aren't solid gold—they are actually made mostly of sterling silver plated with at least 6 grams of pure gold."
+  },
+  {
+    "id": "fact-26",
+    "category": "Baseball",
+    "fact": "Jackie Robinson broke Major League Baseball's color barrier in 1947, and his number 42 is now retired by every MLB team."
+  },
+  {
+    "id": "fact-27",
+    "category": "Hockey",
+    "fact": "Wayne Gretzky scored so many assists (1,963) that even if he had never scored a single goal, he would still hold the NHL all-time points record!"
+  },
+  {
+    "id": "fact-28",
+    "category": "Basketball",
+    "fact": "The 3-point line was introduced in the NBA in 1979. Chris Ford hit the very first NBA 3-pointer on October 12, 1979."
+  },
+  {
+    "id": "fact-29",
+    "category": "Soccer",
+    "fact": "The FIFA Women's World Cup began in 1991, and the United States won the very first tournament."
+  },
+  {
+    "id": "fact-30",
+    "category": "Football",
+    "fact": "The yellow first-down line you see on TV during football games isn't painted on the grass—computers draw it onto the broadcast in real time!"
+  },
+  {
+    "id": "fact-31",
+    "category": "Baseball",
+    "fact": "In 1990, Ken Griffey Sr. and Ken Griffey Jr. became the first father and son to hit back-to-back home runs in the same MLB game."
+  },
+  {
+    "id": "fact-32",
+    "category": "Basketball",
+    "fact": "Every standard basketball hoop sits exactly 10 feet above the floor—the same height as the gym balcony where James Naismith nailed up the first peach basket."
+  },
+  {
+    "id": "fact-33",
+    "category": "Hockey",
+    "fact": "NHL teams can play a game using more than 30 frozen pucks because pucks fly into the stands or warm up on the ice."
+  },
+  {
+    "id": "fact-34",
+    "category": "Baseball",
+    "fact": "Mets mascot Mr. Met debuted in 1963 as a comic-book character before becoming one of the first live costumed mascots in Major League Baseball."
+  },
+  {
+    "id": "fact-35",
+    "category": "Soccer",
+    "fact": "Yellow and red penalty cards were inspired by traffic lights—yellow means caution and red means stop!"
+  },
+  {
+    "id": "fact-36",
+    "category": "Olympics",
+    "fact": "Tug-of-war used to be an official Olympic sport from 1900 to 1920!"
+  }
+]

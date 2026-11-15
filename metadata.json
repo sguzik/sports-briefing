@@ -1,0 +1,6 @@
+{
+  "name": "The Morning Box Score — Sports Brief Studio",
+  "description": "Automated daily kid-friendly sports newspaper generator with live ESPN box scores, Gemini editorial summaries, US Letter broadsheet printing, and GitHub Actions + headless Mac Mini deployment.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

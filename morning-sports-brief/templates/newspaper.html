@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="edition-date" content="{{ edition_date_iso }}">
+  <title>{{ title }} — {{ edition_date_pretty }}</title>
+  <style>
+{{ inline_css }}
+  </style>
+</head>
+<body>
+  <div class="paper-sheet">
+
+    <header class="masthead">
+      <div class="masthead-top-bar">
+        <span>EDITION NO. {{ edition_number }}</span>
+        <span>{{ subtitle }}</span>
+        <span>{{ edition_date_pretty | upper }}</span>
+      </div>
+      <h1 class="masthead-title">{{ title }}</h1>
+      <div class="masthead-rule-double"></div>
+    </header>
+
+    <section class="top-row">
+      <article class="top-story">
+        <div class="section-kicker">{{ top_story.kicker }}</div>
+        <h2 class="lead-headline">{{ top_story.headline }}</h2>
+        <p class="lead-body">{{ top_story.body }}</p>
+      </article>
+
+      {% if lead_image %}
+      <figure class="lead-photo-box">
+        <img class="lead-photo-img" src="{{ lead_image.data_uri }}" alt="{{ lead_image.caption or top_story.headline }}">
+        {% if lead_image.caption or lead_image.credit %}
+        <figcaption class="lead-photo-caption">
+          {{ lead_image.caption }}
+          {% if lead_image.credit %}<span class="lead-photo-credit">({{ lead_image.credit }})</span>{% endif %}
+        </figcaption>
+        {% endif %}
+      </figure>
+      {% elif fact_of_day %}
+      <aside class="fact-box">
+        <div class="fact-badge">SPORTS FACT OF THE DAY</div>
+        <div class="fact-category">{{ fact_of_day.category }}</div>
+        <p class="fact-text">{{ fact_of_day.fact }}</p>
+      </aside>
+      {% endif %}
+    </section>
+
+    <section class="section-block">
+      <div class="section-header">
+        <h3>YOUR TEAMS — YESTERDAY'S BOX SCORES</h3>
+        <span class="section-sub">{{ yesterday_display }}</span>
+      </div>
+
+      <div class="favorites-grid">
+        {% for item in favorite_items %}
+        <div class="game-card {% if not item.game %}game-card-idle{% endif %}">
+          {% if item.game %}
+            {% set g = item.game %}
+            <div class="card-top-meta">
+              <span class="league-pill">{{ g.league_label }}</span>
+              <span class="status-pill">{{ g.status_detail }}</span>
+            </div>
+
+            <table class="box-table">
+              <thead>
+                <tr>
+                  <th class="col-team">TEAM</th>
+                  {% set max_cols = [g.away.linescores|length, g.home.linescores|length]|max %}
+                  {% for i in range(max_cols) %}
+                    <th class="col-period">
+                      {% if g.sport == 'basketball' %}
+                        {{ 'Q' ~ (i + 1) if i < 4 else 'OT' ~ (i - 3 if i > 4 else '') }}
+                      {% elif g.sport == 'football' %}
+                        {{ 'Q' ~ (i + 1) if i < 4 else 'OT' }}
+                      {% elif g.sport == 'hockey' %}
+                        {{ 'P' ~ (i + 1) if i < 3 else 'OT' }}
+                      {% else %}
+                        {{ i + 1 }}
+                      {% endif %}
+                    </th>
+                  {% endfor %}
+                  <th class="col-total">F</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="{% if g.away.winner %}row-winner{% endif %}">
+                  <td class="col-team">
+                    <strong>{{ g.away.abbreviation }}</strong>
+                    {% if g.away.record %}<span class="rec">({{ g.away.record }})</span>{% endif %}
+                  </td>
+                  {% for i in range(max_cols) %}
+                    <td class="col-period">{{ g.away.linescores[i] if i < g.away.linescores|length else '-' }}</td>
+                  {% endfor %}
+                  <td class="col-total">{{ g.away.score }}</td>
+                </tr>
+                <tr class="{% if g.home.winner %}row-winner{% endif %}">
+                  <td class="col-team">
+                    <strong>{{ g.home.abbreviation }}</strong>
+                    {% if g.home.record %}<span class="rec">({{ g.home.record }})</span>{% endif %}
+                  </td>
+                  {% for i in range(max_cols) %}
+                    <td class="col-period">{{ g.home.linescores[i] if i < g.home.linescores|length else '-' }}</td>
+                  {% endfor %}
+                  <td class="col-total">{{ g.home.score }}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="stat-leaders">
+              {% set fav_box = g.home if g.home.team_id == g.favorite_team_id else g.away %}
+              {% set opp_box = g.away if fav_box is sameas g.home else g.home %}
+              {% if fav_box.leaders %}
+                <div class="leader-group">
+                  <span class="leader-team-tag">{{ fav_box.abbreviation }} LEADERS:</span>
+                  {% for line in fav_box.leaders[:3] %}
+                    <div class="leader-line">{{ line }}</div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+              {% if opp_box.leaders %}
+                <div class="leader-line leader-opp">
+                  <strong>{{ opp_box.abbreviation }}:</strong> {{ opp_box.leaders[0] }}
+                </div>
+              {% endif %}
+            </div>
+          {% else %}
+            <div class="card-top-meta">
+              <span class="league-pill">{{ item.upcoming.league_label }}</span>
+              <span class="status-pill status-idle">NO GAME YESTERDAY</span>
+            </div>
+            <div class="idle-team-name">{{ item.team_config.name }}</div>
+            {% if item.upcoming.record %}
+              <div class="idle-record">Season Record: {{ item.upcoming.record }}</div>
+            {% endif %}
+            <div class="idle-next">
+              {% if item.upcoming.status_type == 'offseason' %}
+                <strong>Status:</strong> {{ item.upcoming.matchup }}
+              {% else %}
+                <strong>Next Up:</strong> {{ item.upcoming.matchup }} — {{ item.upcoming.time_display }}
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="section-block">
+      <div class="section-header">
+        <h3>AROUND THE WORLD OF SPORTS</h3>
+        <span class="section-sub">CLOSE FINISHES &amp; BIG PERFORMANCES</span>
+      </div>
+
+      {% if interesting_games %}
+      <div class="highlights-grid">
+        {% for h in interesting_games %}
+          {% if h.kind == 'game' and h.game %}
+            {% set g = h.game %}
+            <div class="highlight-card">
+              <div class="hl-meta">
+                <span class="league-pill-sm">{{ g.league_label }}</span>
+                <span class="hl-status">{{ g.status_detail }}</span>
+              </div>
+              <div class="hl-scores">
+                <div class="hl-team {% if g.away.winner %}hl-winner{% endif %}">
+                  <span>{{ g.away.short_name }} {% if g.away.record %}<small>({{ g.away.record }})</small>{% endif %}</span>
+                  <strong>{{ g.away.score }}</strong>
+                </div>
+                <div class="hl-team {% if g.home.winner %}hl-winner{% endif %}">
+                  <span>{{ g.home.short_name }} {% if g.home.record %}<small>({{ g.home.record }})</small>{% endif %}</span>
+                  <strong>{{ g.home.score }}</strong>
+                </div>
+              </div>
+              {% if g.milestones %}
+                <div class="hl-note">★ {{ g.milestones[0] }}</div>
+              {% elif g.home.winner and g.home.leaders %}
+                <div class="hl-note">{{ g.home.leaders[0] }}</div>
+              {% elif g.away.leaders %}
+                <div class="hl-note">{{ g.away.leaders[0] }}</div>
+              {% endif %}
+            </div>
+          {% else %}
+            <div class="highlight-card">
+              <div class="hl-meta">
+                <span class="league-pill-sm">{{ h.league_label }}</span>
+                <span class="hl-status">{{ h.status_detail }}</span>
+              </div>
+              <div class="hl-rss-title">{{ h.title }}</div>
+              {% if h.summary %}
+                <div class="hl-note">{{ h.summary }}</div>
+              {% endif %}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="empty-note">Quiet slate across the major leagues yesterday—check back tomorrow for more scores!</p>
+      {% endif %}
+    </section>
+
+    <section class="upcoming-section">
+      <div class="upcoming-title">UPCOMING ON THE SCHEDULE — YOUR TEAMS</div>
+      <div class="upcoming-grid">
+        {% for item in favorite_items %}
+        <div class="upcoming-item">
+          <span class="up-team">{{ item.upcoming.short_name }} ({{ item.upcoming.league_label }})</span>
+          <span class="up-detail">
+            {% if item.upcoming.status_type == 'today' %}
+              <strong>TODAY:</strong> {{ item.upcoming.matchup }} • {{ item.upcoming.time_display }}
+            {% elif item.upcoming.status_type == 'upcoming' %}
+              {{ item.upcoming.matchup }} • {{ item.upcoming.time_display }}
+            {% else %}
+              Off-Season
+            {% endif %}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+  </div>
+</body>
+</html>

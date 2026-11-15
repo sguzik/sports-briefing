@@ -1,0 +1,73 @@
+newspaper:
+  title: "THE MORNING BOX SCORE"
+  subtitle: "All the Big Plays, Scores & Stories — Ready Before Breakfast"
+  timezone: "America/New_York"
+
+data_provider:
+  # Supported: "espn" (zero-cost default), "api_sports", "balldontlie"
+  name: "espn"
+  timeout_seconds: 12
+
+editorial:
+  # LLM selection order when API keys are set via GitHub Secrets: "auto", "gemini", "openai", or "offline"
+  llm_mode: "auto"
+  gemini_model: "gemini-4-hydrogen"
+  openai_model: "gpt-4o-mini"
+  target_word_count: "120-160"
+
+curation:
+  max_interesting_games: 6
+  min_interesting_games: 4
+
+# Priority 1: Full Mini-Box Scores + Upcoming Schedule
+favorite_teams:
+  - name: "New York Knicks"
+    short_name: "Knicks"
+    sport: "basketball"
+    league: "nba"
+    espn_team_id: "18"
+    abbreviation: "NYK"
+
+  - name: "New York Liberty"
+    short_name: "Liberty"
+    sport: "basketball"
+    league: "wnba"
+    espn_team_id: "9"
+    abbreviation: "NYL"
+
+  - name: "New York Mets"
+    short_name: "Mets"
+    sport: "baseball"
+    league: "mlb"
+    espn_team_id: "21"
+    abbreviation: "NYM"
+
+# Priority 2: Secondary leagues scanned for exciting games
+secondary_leagues:
+  - label: "NBA"
+    sport: "basketball"
+    league: "nba"
+  - label: "WNBA"
+    sport: "basketball"
+    league: "wnba"
+  - label: "MLB"
+    sport: "baseball"
+    league: "mlb"
+  - label: "Premier League"
+    sport: "soccer"
+    league: "eng.1"
+  - label: "Champions League"
+    sport: "soccer"
+    league: "uefa.champions"
+
+# Priority 2B: Individual & Olympic sports highlights via public RSS feeds
+highlight_feeds:
+  - label: "Distance Running"
+    sport: "running"
+    feed_url: "https://www.letsrun.com/feed/"
+  - label: "Gymnastics"
+    sport: "gymnastics"
+    feed_url: "https://usagym.org/feed/"
+  - label: "Skiing"
+    sport: "skiing"
+    feed_url: "https://www.skiracing.com/feed/"
