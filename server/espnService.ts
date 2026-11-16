@@ -477,10 +477,18 @@ function formatEtDateParts(date: Date, tzName: string): { yyyymmdd: string; dayP
   return { yyyymmdd, dayPretty, timePretty };
 }
 
+function yyyymmddToDayNumber(yyyymmdd: string): number {
+  const y = Number(yyyymmdd.slice(0, 4));
+  const m = Number(yyyymmdd.slice(4, 6));
+  const d = Number(yyyymmdd.slice(6, 8));
+  return Math.floor(Date.UTC(y, m - 1, d) / 86400000);
+}
+
 export async function fetchTeamNextEvent(
   fav: FavoriteTeamConfig,
   todayYyyymmdd: string,
   tzName: string,
+  windowDays = 14,
   timeoutMs = 10000
 ): Promise<UpcomingEvent> {
   const url = `${ESPN_BASE}/${fav.sport}/${fav.league}/teams/${fav.espn_team_id}`;
@@ -489,6 +497,7 @@ export async function fetchTeamNextEvent(
 
   const recordStr = teamObj?.record?.items?.[0]?.summary || '';
   const nextEvents = Array.isArray(teamObj?.nextEvent) ? teamObj.nextEvent : [];
+  const todayDayNum = yyyymmddToDayNumber(todayYyyymmdd);
 
   if (nextEvents.length > 0) {
     const ev = nextEvents[0];
@@ -498,6 +507,8 @@ export async function fetchTeamNextEvent(
       const dt = new Date(evDateStr);
       if (!Number.isNaN(dt.getTime())) {
         const { yyyymmdd, dayPretty, timePretty } = formatEtDateParts(dt, tzName);
+        const daysAway = yyyymmddToDayNumber(yyyymmdd) - todayDayNum;
+
         if (yyyymmdd === todayYyyymmdd) {
           return {
             team_name: fav.name,
@@ -509,16 +520,56 @@ export async function fetchTeamNextEvent(
             record: recordStr,
           };
         }
-        return {
-          team_name: fav.name,
-          short_name: fav.short_name || fav.name,
-          league_label: fav.league.toUpperCase(),
-          status_type: 'upcoming',
-          matchup,
-          time_display: `${dayPretty} at ${timePretty}`,
-          record: recordStr,
-        };
+
+        if (daysAway > 0 && daysAway <= windowDays) {
+          return {
+            team_name: fav.name,
+            short_name: fav.short_name || fav.name,
+            league_label: fav.league.toUpperCase(),
+            status_type: 'upcoming',
+            matchup,
+            time_display: `${dayPretty} at ${timePretty}`,
+            record: recordStr,
+          };
+        }
+
+        if (daysAway > windowDays) {
+          return {
+            team_name: fav.name,
+            short_name: fav.short_name || fav.name,
+            league_label: fav.league.toUpperCase(),
+            status_type: 'offseason',
+            matchup: 'Off-Season',
+            time_display: 'Off-Season',
+            record: recordStr,
+          };
+        }
       }
+    }
+  }
+
+  const todayGames = await fetchScoreboard(
+    fav.sport,
+    fav.league,
+    fav.league.toUpperCase(),
+    todayYyyymmdd,
+    timeoutMs
+  );
+  for (const g of todayGames) {
+    if (g.home.team_id === String(fav.espn_team_id) || g.away.team_id === String(fav.espn_team_id)) {
+      const dt = new Date(g.start_time_utc);
+      const timePretty = !Number.isNaN(dt.getTime())
+        ? formatEtDateParts(dt, tzName).timePretty
+        : 'Tonight';
+      return {
+        team_name: fav.name,
+        short_name: fav.short_name || fav.name,
+        league_label: fav.league.toUpperCase(),
+        status_type: 'today',
+        matchup: `${g.away.abbreviation} @ ${g.home.abbreviation}`,
+        time_display: `Today at ${timePretty}`,
+        record: recordStr,
+      };
     }
   }
 
@@ -527,8 +578,8 @@ export async function fetchTeamNextEvent(
     short_name: fav.short_name || fav.name,
     league_label: fav.league.toUpperCase(),
     status_type: 'offseason',
-    matchup: 'No games currently scheduled (Off-Season)',
-    time_display: 'Check back soon',
+    matchup: 'Off-Season',
+    time_display: 'Off-Season',
     record: recordStr,
   };
 }
@@ -616,24 +667,53 @@ function decodeHtmlEntities(input: string): string {
     .replace(/&[a-zA-Z]+;/g, (m) => named[m] ?? m);
 }
 
-function cleanRssText(raw: string, maxLen: number): string {
+function cleanRssText(raw: string): string {
   let text = decodeHtmlEntities(raw || '');
   text = text.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1');
   text = decodeHtmlEntities(text);
   text = text.replace(/<[^>]+>/g, ' ');
   text = text.replace(/The post .*? appeared first on .*?$/i, '');
   text = text.replace(/\s+/g, ' ').trim();
-  text = text.replace(/\b(odds|spread|moneyline|parlay|over\/under|wager|betting|bettor|sportsbook|vegas)\b/gi, 'matchup');
-  if (text.length > maxLen) {
-    const cut = text.slice(0, maxLen - 1);
-    const spaceIdx = cut.lastIndexOf(' ');
-    text = `${spaceIdx > 20 ? cut.slice(0, spaceIdx) : cut}…`;
-  }
+  text = text.replace(
+    /\b(odds|spread|moneyline|parlay|over\/under|wager|betting|bettor|sportsbook|vegas)\b/gi,
+    'matchup'
+  );
   return text;
 }
 
+function firstCompleteSentences(text: string, maxChars = 190): string {
+  const cleaned = (text || '').replace(/\s+/g, ' ').trim();
+  if (!cleaned) return '';
+
+  const DOT_TOKEN = '__DOT__';
+  const protectedText = cleaned.replace(
+    /\b(?:U\.S\.A\.|U\.S\.|U\.K\.|Dr\.|Mr\.|Mrs\.|Ms\.|St\.|Jr\.|Sr\.|No\.|vs\.)/gi,
+    (m) => m.replace(/\./g, DOT_TOKEN)
+  );
+
+  const sentences = protectedText
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.replaceAll(DOT_TOKEN, '.').trim())
+    .filter(Boolean);
+  if (!sentences.length) return cleaned;
+
+  const selected: string[] = [];
+  let total = 0;
+  for (const s of sentences.slice(0, 2)) {
+    if (selected.length > 0 && total + s.length + 1 > maxChars) break;
+    selected.push(s);
+    total += s.length + 1;
+    if (s.length >= 75) break;
+  }
+
+  let out = selected.join(' ').trim();
+  if (out && !/[.!?]$/.test(out)) out += '.';
+  return out;
+}
+
 function extractXmlTag(block: string, tag: string): string {
-  const match = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'));
+  const escaped = tag.replace(':', '\\:');
+  const match = block.match(new RegExp(`<${escaped}[^>]*>([\\s\\S]*?)<\\/${escaped}>`, 'i'));
   return match ? match[1] : '';
 }
 
@@ -666,9 +746,13 @@ export async function fetchRssHighlights(
 
   for (const m of itemMatches) {
     const block = m[1];
-    const title = cleanRssText(extractXmlTag(block, 'title'), 92);
+    const title = cleanRssText(extractXmlTag(block, 'title'));
     if (!title) continue;
-    const summary = cleanRssText(extractXmlTag(block, 'description'), 118);
+
+    const descClean = cleanRssText(extractXmlTag(block, 'description'));
+    const encodedClean = cleanRssText(extractXmlTag(block, 'content:encoded'));
+    const articleText = (encodedClean.length >= descClean.length ? encodedClean : descClean).slice(0, 2500);
+    const link = cleanRssText(extractXmlTag(block, 'link'));
     const pubRaw = extractXmlTag(block, 'pubDate').trim();
 
     let dateDisplay = 'Recent';
@@ -692,12 +776,54 @@ export async function fetchRssHighlights(
       league_label: feed.label,
       status_detail: dateDisplay,
       title,
-      summary,
+      summary: firstCompleteSentences(articleText, 160),
+      link,
+      article_text: articleText,
       sort_score: Math.max(10, 90 - daysDiff * 15),
     });
   }
 
   return parsed.sort((a, b) => b.sort_score - a.sort_score);
+}
+
+async function enrichRssArticle(item: HighlightItem, timeoutMs = 8000): Promise<HighlightItem> {
+  if (item.kind !== 'rss' || !item.link || (item.article_text?.length || 0) >= 350) {
+    return item;
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(item.link, {
+      signal: controller.signal,
+      headers: { 'User-Agent': 'MorningSportsBrief/1.0' },
+    });
+    if (!res.ok) return item;
+    const html = await res.text();
+    const cleanedHtml = html.replace(
+      /<(script|style|noscript|nav|footer|header)[^>]*>[\s\S]*?<\/\1>/gi,
+      ' '
+    );
+    const paragraphs: string[] = [];
+    for (const m of cleanedHtml.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)) {
+      const text = cleanRssText(m[1]);
+      if (text.length >= 40) paragraphs.push(text);
+      if (paragraphs.join(' ').length >= 2200) break;
+    }
+    if (paragraphs.length > 0) {
+      const combined = paragraphs.join(' ').slice(0, 2500);
+      if (combined.length > (item.article_text?.length || 0)) {
+        item.article_text = combined;
+        if (!item.summary) {
+          item.summary = firstCompleteSentences(combined, 160);
+        }
+      }
+    }
+  } catch {
+    // Keep RSS feed excerpt on network failure
+  } finally {
+    clearTimeout(timer);
+  }
+  return item;
 }
 
 export async function curateEdition(
@@ -750,6 +876,8 @@ export async function curateEdition(
   const favoriteEventIds = new Set<string>();
   const favoriteCompleted: GameRecord[] = [];
 
+  const windowDays = config.curation?.upcoming_window_days ?? 14;
+
   await Promise.all(
     config.favorite_teams.map(async (fav, idx) => {
       let matched = allCompleted.find((g) => matchesFavorite(g, fav)) || null;
@@ -762,7 +890,7 @@ export async function curateEdition(
         favoriteCompleted.push(matched);
       }
 
-      const upcoming = await fetchTeamNextEvent(fav, todayYyyymmdd, tzName, timeoutMs);
+      const upcoming = await fetchTeamNextEvent(fav, todayYyyymmdd, tzName, windowDays, timeoutMs);
       favoriteItems[idx] = {
         team_config: fav,
         game: matched,
@@ -839,6 +967,13 @@ export async function curateEdition(
     highlights.push(extra);
   }
 
+  const finalHighlights = highlights.slice(0, maxInteresting);
+  await Promise.all(
+    finalHighlights.map((item) =>
+      item.kind === 'rss' ? enrichRssArticle(item, Math.min(timeoutMs, 8000)) : Promise.resolve(item)
+    )
+  );
+
   let leadGame: GameRecord | null = null;
   if (favoriteCompleted.length > 0) {
     leadGame = favoriteCompleted.reduce((best, cur) =>
@@ -853,7 +988,7 @@ export async function curateEdition(
   return {
     favorite_items: favoriteItems,
     interesting_games: selectedGames,
-    highlights: highlights.slice(0, maxInteresting),
+    highlights: finalHighlights,
     lead_game: leadGame,
   };
 }

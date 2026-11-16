@@ -57,14 +57,15 @@ export const DeployMacView: React.FC = () => {
         <div className="rounded-md border border-[#DDD6C8] bg-white p-5">
           <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#5C574F]">
             <FolderGit2 className="h-4 w-4 text-[#1E3A8A]" />
-            <span>01. Cloud Cron (6:00 AM ET)</span>
+            <span>01. Cloud Cron (5:05 AM ET)</span>
           </div>
           <h3 className="text-base font-semibold text-[#1A1816]">
             GitHub Actions + Python 3.11
           </h3>
           <p className="mt-1.5 text-sm leading-relaxed text-[#4A453E]">
             Runs <code className="font-tabular text-xs">build_brief.py</code> daily at{' '}
-            <code className="font-tabular text-xs">0 11 * * *</code> UTC, fetches ESPN scores, ranks close games, writes the Top Story, and persists <code className="font-tabular text-xs">state.json</code>.
+            <code className="font-tabular text-xs">5 9 * * *</code> /{' '}
+            <code className="font-tabular text-xs">5 10 * * *</code> UTC (5:05 AM ET year-round), fetches ESPN scores &amp; RSS highlights, summarizes at 1st–2nd grade level, and persists <code className="font-tabular text-xs">state.json</code>.
           </p>
         </div>
 
@@ -85,7 +86,7 @@ export const DeployMacView: React.FC = () => {
         <div className="rounded-md border border-[#DDD6C8] bg-white p-5">
           <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#5C574F]">
             <Printer className="h-4 w-4 text-[#1E3A8A]" />
-            <span>03. Local Print (6:25 AM)</span>
+            <span>03. Local Print (5:25 AM)</span>
           </div>
           <h3 className="text-base font-semibold text-[#1A1816]">
             Headless Mac Mini + CUPS

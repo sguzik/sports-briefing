@@ -3,7 +3,7 @@
 A split-architecture daily sports newspaper pipeline paired with an interactive full-stack studio for previewing, configuring, and exporting editions.
 
 - **Broadsheet Studio (Web App — `server.ts` + `src/`):** Live preview of the US Letter (`8.5" × 11"`) grayscale newspaper powered by real-time ESPN JSON endpoints, RSS feeds (Distance Running, Gymnastics, Skiing), and Gemini editorial summarization, plus interactive editors for `config.yaml`, `data/facts.json`, and a one-click `.zip` download of the deployment repository.
-- **Cloud Generator (`morning-sports-brief/`):** Python 3.11 + GitHub Actions pipeline that builds a self-contained `dist/latest.html` every morning at `11:00 UTC` (~6:00 AM EST) and deploys it to GitHub Pages.
+- **Cloud Generator (`morning-sports-brief/`):** Python 3.11 + GitHub Actions pipeline that builds a self-contained `dist/latest.html` every morning around **5:05 AM ET** (`5 9 * * *` EDT / `5 10 * * *` EST) and deploys it to GitHub Pages.
 - **Headless Mac Print Client (`morning-sports-brief/mac-client/`):** Lightweight `launchd` + Bash script that curls `latest.html`, converts it to US Letter PDF via headless Google Chrome, and prints silently via CUPS (`lp`) with duplicate-print protection.
 
 ---
@@ -130,7 +130,7 @@ Go to **Settings → Secrets and variables → Actions → New repository secret
 ### 4. Verify the Workflow
 1. Open **Actions → Daily Morning Sports Brief → Run workflow** to trigger an immediate test build.
 2. Once finished, verify your paper loads at `https://<your-username>.github.io/<your-repo>/latest.html`.
-3. Subsequent editions build automatically every morning at `0 11 * * *` UTC (~6:00 AM EST / 7:00 AM EDT).
+3. Subsequent editions build automatically every morning around **5:05 AM Eastern** (`5 9 * * *` UTC in EDT / `5 10 * * *` UTC in EST, with a DST guard so only the 5 AM ET run builds).
 
 ---
 
@@ -163,14 +163,14 @@ Configure these in `morning-sports-brief/mac-client/com.user.sportsbrief.plist` 
    BRIEF_URL="https://<your-username>.github.io/<your-repo>/latest.html" \
      ~/morning-sports-brief/print_brief.sh --dry-run
    ```
-3. Update `YOUR_MAC_USER`, `BRIEF_URL`, and `PRINTER_NAME` inside `morning-sports-brief/mac-client/com.user.sportsbrief.plist`, then install and load the 6:25 AM daily `launchd` agent:
+3. Update `YOUR_MAC_USER`, `BRIEF_URL`, and `PRINTER_NAME` inside `morning-sports-brief/mac-client/com.user.sportsbrief.plist`, then install and load the 5:25 AM daily `launchd` agent:
    ```bash
    cp morning-sports-brief/mac-client/com.user.sportsbrief.plist ~/Library/LaunchAgents/com.user.sportsbrief.plist
    launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.user.sportsbrief.plist
    ```
-4. *(Optional)* Wake the Mac Mini automatically at 6:20 AM if it sleeps overnight:
+4. *(Optional)* Wake the Mac Mini automatically at 5:20 AM if it sleeps overnight:
    ```bash
-   sudo pmset repeat wakeorpoweron MTWRFSU 06:20:00
+   sudo pmset repeat wakeorpoweron MTWRFSU 05:20:00
    ```
 
 See `morning-sports-brief/mac-client/README.md` for additional launchd management and troubleshooting commands.

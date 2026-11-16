@@ -73,11 +73,11 @@ Copy the exact printer name (for example, `Brother_HL_L2350DW_series`).
 
 ---
 
-## 5. Wake the Mac Mini Before 6:25 AM (Optional)
-If the Mac Mini sleeps overnight, schedule an automatic wake-up at 6:20 AM every day:
+## 5. Wake the Mac Mini Before 5:25 AM (Optional)
+If the Mac Mini sleeps overnight, schedule an automatic wake-up at 5:20 AM every day:
 
 ```bash
-sudo pmset repeat wakeorpoweron MTWRFSU 06:20:00
+sudo pmset repeat wakeorpoweron MTWRFSU 05:20:00
 ```
 
 Verify the power schedule with:

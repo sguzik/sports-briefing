@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from fetchers import BaseFetcher, GameRecord, HighlightItem, UpcomingEvent
-from fetchers.rss_fetcher import fetch_rss_highlights
+from fetchers.rss_fetcher import enrich_rss_article, fetch_rss_highlights
 
 logger = logging.getLogger(__name__)
 
@@ -208,6 +208,11 @@ def curate_edition(
                 break
             highlights.append(extra)
 
+    final_highlights = highlights[:max_interesting]
+    for item in final_highlights:
+        if item.kind == "rss":
+            enrich_rss_article(item, timeout=timeout)
+
     lead_game: Optional[GameRecord] = None
     if favorite_completed_games:
         lead_game = max(favorite_completed_games, key=score_game_excitement)
@@ -218,6 +223,6 @@ def curate_edition(
 
     return {
         "favorite_items": favorite_items,
-        "interesting_games": highlights[:max_interesting],
+        "interesting_games": final_highlights,
         "lead_game": lead_game,
     }

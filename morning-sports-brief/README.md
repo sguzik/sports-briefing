@@ -2,7 +2,7 @@
 
 An automated, two-part pipeline that publishes a daily, kid-friendly, grayscale-ready US Letter (`8.5" × 11"`) newspaper of yesterday's sports box scores and silently prints it before breakfast:
 
-1. **Cloud Generator (GitHub Actions + Python):** Runs daily at `11:00 UTC` (~6:00 AM EST / 7:00 AM EDT), fetches completed games from ESPN's public endpoints and recent highlights from Distance Running, Gymnastics, and Skiing RSS feeds, writes an easy-reader Top Story, embeds the lead game photo (falling back to a rotating **Sports Fact of the Day** when no photo is available), and deploys a single self-contained `dist/latest.html` to **GitHub Pages**.
+1. **Cloud Generator (GitHub Actions + Python):** Runs daily around **5:05 AM ET** (`5 9 * * *` EDT / `5 10 * * *` EST with DST guard), fetches completed games from ESPN's public endpoints and recent highlights from Distance Running, Gymnastics, and Skiing RSS feeds, writes an easy-reader Top Story, embeds the lead game photo (falling back to a rotating **Sports Fact of the Day** when no photo is available), and deploys a single self-contained `dist/latest.html` to **GitHub Pages**.
 2. **Local Print Client (Headless Mac Mini):** A minimal `launchd`-scheduled Bash script (`mac-client/print_brief.sh`) that fetches `latest.html`, converts it to PDF with headless Google Chrome, and prints once per edition date via macOS CUPS (`lp`).
 
 ---
@@ -29,7 +29,7 @@ morning-sports-brief/
 │   └── newspaper.css                  # Print-safe grayscale stylesheet (inlined into latest.html)
 └── mac-client/
     ├── print_brief.sh                 # curl -> headless Chrome PDF -> lp print script
-    ├── com.user.sportsbrief.plist     # macOS launchd schedule (6:25 AM daily)
+    ├── com.user.sportsbrief.plist     # macOS launchd schedule (5:25 AM daily)
     └── README.md                      # Detailed Mac Mini CUPS & pmset guide
 ```
 
@@ -122,14 +122,14 @@ The Mac Mini client requires **no Python environment**—only macOS's built-in `
    BRIEF_URL="https://<your-username>.github.io/<your-repo>/latest.html" \
      ~/morning-sports-brief/print_brief.sh --dry-run
    ```
-3. Edit `mac-client/com.user.sportsbrief.plist` with your macOS username, `BRIEF_URL`, and `PRINTER_NAME`, then load the `launchd` schedule (runs daily at **6:25 AM**):
+3. Edit `mac-client/com.user.sportsbrief.plist` with your macOS username, `BRIEF_URL`, and `PRINTER_NAME`, then load the `launchd` schedule (runs daily at **5:25 AM**):
    ```bash
    cp mac-client/com.user.sportsbrief.plist ~/Library/LaunchAgents/com.user.sportsbrief.plist
    launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.user.sportsbrief.plist
    ```
-4. *(Optional)* Wake a sleeping Mac Mini at 6:20 AM daily:
+4. *(Optional)* Wake a sleeping Mac Mini at 5:20 AM daily:
    ```bash
-   sudo pmset repeat wakeorpoweron MTWRFSU 06:20:00
+   sudo pmset repeat wakeorpoweron MTWRFSU 05:20:00
    ```
 
 See `mac-client/README.md` for full troubleshooting and launchd reload commands.

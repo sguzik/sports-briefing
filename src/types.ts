@@ -78,6 +78,8 @@ export interface HighlightItem {
   game?: GameRecord;
   title?: string;
   summary?: string;
+  link?: string;
+  article_text?: string;
 }
 
 export interface BriefConfig {
@@ -99,6 +101,7 @@ export interface BriefConfig {
   curation: {
     max_interesting_games: number;
     min_interesting_games: number;
+    upcoming_window_days?: number;
   };
   favorite_teams: FavoriteTeamConfig[];
   secondary_leagues: SecondaryLeagueConfig[];

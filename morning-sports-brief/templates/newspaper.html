@@ -48,105 +48,91 @@
       {% endif %}
     </section>
 
+    <!-- MIDDLE ROW: YOUR TEAMS (PRIORITY 1) -->
+    {% set played_favorites = favorite_items | selectattr('game') | list %}
+    {% if played_favorites %}
     <section class="section-block">
       <div class="section-header">
         <h3>YOUR TEAMS — YESTERDAY'S BOX SCORES</h3>
         <span class="section-sub">{{ yesterday_display }}</span>
       </div>
 
-      <div class="favorites-grid">
-        {% for item in favorite_items %}
-        <div class="game-card {% if not item.game %}game-card-idle{% endif %}">
-          {% if item.game %}
-            {% set g = item.game %}
-            <div class="card-top-meta">
-              <span class="league-pill">{{ g.league_label }}</span>
-              <span class="status-pill">{{ g.status_detail }}</span>
-            </div>
+      <div class="favorites-grid {% if played_favorites|length == 1 %}favorites-grid-single{% endif %}">
+        {% for item in played_favorites %}
+        {% set g = item.game %}
+        <div class="game-card">
+          <div class="card-top-meta">
+            <span class="league-pill">{{ g.league_label }}</span>
+            <span class="status-pill">{{ g.status_detail }}</span>
+          </div>
 
-            <table class="box-table">
-              <thead>
-                <tr>
-                  <th class="col-team">TEAM</th>
-                  {% set max_cols = [g.away.linescores|length, g.home.linescores|length]|max %}
-                  {% for i in range(max_cols) %}
-                    <th class="col-period">
-                      {% if g.sport == 'basketball' %}
-                        {{ 'Q' ~ (i + 1) if i < 4 else 'OT' ~ (i - 3 if i > 4 else '') }}
-                      {% elif g.sport == 'football' %}
-                        {{ 'Q' ~ (i + 1) if i < 4 else 'OT' }}
-                      {% elif g.sport == 'hockey' %}
-                        {{ 'P' ~ (i + 1) if i < 3 else 'OT' }}
-                      {% else %}
-                        {{ i + 1 }}
-                      {% endif %}
-                    </th>
-                  {% endfor %}
-                  <th class="col-total">F</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr class="{% if g.away.winner %}row-winner{% endif %}">
-                  <td class="col-team">
-                    <strong>{{ g.away.abbreviation }}</strong>
-                    {% if g.away.record %}<span class="rec">({{ g.away.record }})</span>{% endif %}
-                  </td>
-                  {% for i in range(max_cols) %}
-                    <td class="col-period">{{ g.away.linescores[i] if i < g.away.linescores|length else '-' }}</td>
-                  {% endfor %}
-                  <td class="col-total">{{ g.away.score }}</td>
-                </tr>
-                <tr class="{% if g.home.winner %}row-winner{% endif %}">
-                  <td class="col-team">
-                    <strong>{{ g.home.abbreviation }}</strong>
-                    {% if g.home.record %}<span class="rec">({{ g.home.record }})</span>{% endif %}
-                  </td>
-                  {% for i in range(max_cols) %}
-                    <td class="col-period">{{ g.home.linescores[i] if i < g.home.linescores|length else '-' }}</td>
-                  {% endfor %}
-                  <td class="col-total">{{ g.home.score }}</td>
-                </tr>
-              </tbody>
-            </table>
+          <table class="box-table">
+            <thead>
+              <tr>
+                <th class="col-team">TEAM</th>
+                {% set max_cols = [g.away.linescores|length, g.home.linescores|length]|max %}
+                {% for i in range(max_cols) %}
+                  <th class="col-period">
+                    {% if g.sport == 'basketball' %}
+                      {{ 'Q' ~ (i + 1) if i < 4 else 'OT' ~ (i - 3 if i > 4 else '') }}
+                    {% elif g.sport == 'football' %}
+                      {{ 'Q' ~ (i + 1) if i < 4 else 'OT' }}
+                    {% elif g.sport == 'hockey' %}
+                      {{ 'P' ~ (i + 1) if i < 3 else 'OT' }}
+                    {% else %}
+                      {{ i + 1 }}
+                    {% endif %}
+                  </th>
+                {% endfor %}
+                <th class="col-total">F</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="{% if g.away.winner %}row-winner{% endif %}">
+                <td class="col-team">
+                  <strong>{{ g.away.abbreviation }}</strong>
+                  {% if g.away.record %}<span class="rec">({{ g.away.record }})</span>{% endif %}
+                </td>
+                {% for i in range(max_cols) %}
+                  <td class="col-period">{{ g.away.linescores[i] if i < g.away.linescores|length else '-' }}</td>
+                {% endfor %}
+                <td class="col-total">{{ g.away.score }}</td>
+              </tr>
+              <tr class="{% if g.home.winner %}row-winner{% endif %}">
+                <td class="col-team">
+                  <strong>{{ g.home.abbreviation }}</strong>
+                  {% if g.home.record %}<span class="rec">({{ g.home.record }})</span>{% endif %}
+                </td>
+                {% for i in range(max_cols) %}
+                  <td class="col-period">{{ g.home.linescores[i] if i < g.home.linescores|length else '-' }}</td>
+                {% endfor %}
+                <td class="col-total">{{ g.home.score }}</td>
+              </tr>
+            </tbody>
+          </table>
 
-            <div class="stat-leaders">
-              {% set fav_box = g.home if g.home.team_id == g.favorite_team_id else g.away %}
-              {% set opp_box = g.away if fav_box is sameas g.home else g.home %}
-              {% if fav_box.leaders %}
-                <div class="leader-group">
-                  <span class="leader-team-tag">{{ fav_box.abbreviation }} LEADERS:</span>
-                  {% for line in fav_box.leaders[:3] %}
-                    <div class="leader-line">{{ line }}</div>
-                  {% endfor %}
-                </div>
-              {% endif %}
-              {% if opp_box.leaders %}
-                <div class="leader-line leader-opp">
-                  <strong>{{ opp_box.abbreviation }}:</strong> {{ opp_box.leaders[0] }}
-                </div>
-              {% endif %}
-            </div>
-          {% else %}
-            <div class="card-top-meta">
-              <span class="league-pill">{{ item.upcoming.league_label }}</span>
-              <span class="status-pill status-idle">NO GAME YESTERDAY</span>
-            </div>
-            <div class="idle-team-name">{{ item.team_config.name }}</div>
-            {% if item.upcoming.record %}
-              <div class="idle-record">Season Record: {{ item.upcoming.record }}</div>
+          <div class="stat-leaders">
+            {% set fav_box = g.home if g.home.team_id == g.favorite_team_id else g.away %}
+            {% set opp_box = g.away if fav_box is sameas g.home else g.home %}
+            {% if fav_box.leaders %}
+              <div class="leader-group">
+                <span class="leader-team-tag">{{ fav_box.abbreviation }} LEADERS:</span>
+                {% for line in fav_box.leaders[:3] %}
+                  <div class="leader-line">{{ line }}</div>
+                {% endfor %}
+              </div>
             {% endif %}
-            <div class="idle-next">
-              {% if item.upcoming.status_type == 'offseason' %}
-                <strong>Status:</strong> {{ item.upcoming.matchup }}
-              {% else %}
-                <strong>Next Up:</strong> {{ item.upcoming.matchup }} — {{ item.upcoming.time_display }}
-              {% endif %}
-            </div>
-          {% endif %}
+            {% if opp_box.leaders %}
+              <div class="leader-line leader-opp">
+                <strong>{{ opp_box.abbreviation }}:</strong> {{ opp_box.leaders[0] }}
+              </div>
+            {% endif %}
+          </div>
         </div>
         {% endfor %}
       </div>
     </section>
+    {% endif %}
 
     <section class="section-block">
       <div class="section-header">

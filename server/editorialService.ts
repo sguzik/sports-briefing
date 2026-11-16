@@ -1,10 +1,14 @@
-import { GoogleGenAI } from '@google/genai';
-import type { BriefConfig, GameRecord, TopStory } from '../src/types.ts';
+import { GoogleGenAI, ThinkingLevel, Type } from '@google/genai';
+import type { BriefConfig, GameRecord, HighlightItem, TopStory } from '../src/types.ts';
 
 const BANNED_TERMS = /\b(odds|spread|moneyline|parlay|over\/under|wager|betting|bettor|sportsbook|vegas)\b/gi;
 
 function cleanBettingLanguage(text: string): string {
   return text.replace(BANNED_TERMS, 'matchup').trim();
+}
+
+function stripEllipsis(text: string): string {
+  return (text || '').replace(/\.\.\./g, '').replace(/…/g, '').trim();
 }
 
 function isOvertime(game: GameRecord): boolean {
@@ -42,7 +46,7 @@ function parseHeadlineAndBody(rawText: string): { headline: string; body: string
     .filter(Boolean);
   if (!lines.length) return null;
 
-  let headline = "Big Win Highlights Yesterday's Action";
+  let headline = "Big Win in Yesterday's Game!";
   const bodyLines: string[] = [];
 
   lines.forEach((line, idx) => {
@@ -56,64 +60,77 @@ function parseHeadlineAndBody(rawText: string): { headline: string; body: string
     }
   });
 
-  const body = bodyLines.join(' ').trim();
-  if (body.split(/\s+/).length < 35) return null;
-  return { headline, body };
+  const finalHeadline = stripEllipsis(headline);
+  const body = stripEllipsis(bodyLines.join(' '));
+  if (body.split(/\s+/).length < 30) return null;
+  return { headline: finalHeadline, body };
 }
 
 export function generateOfflineStory(game: GameRecord | null): TopStory {
   if (!game) {
     return {
       kicker: 'MORNING BRIEFING',
-      headline: 'Quiet Night on the Scoreboard — Big Games Ahead!',
-      body: 'Our favorite hometown teams took a well-earned breather from the schedule yesterday, giving players time to rest up, practice their fundamentals, and study film for the next big matchup. Across the sports world, teams are gearing up for another exciting stretch of action on courts, fields, and rinks everywhere. Check out the schedule box below to see when your favorite squads return to action, and test your sports smarts with today’s Fact of the Day!',
+      headline: 'No Big Games Last Night',
+      body: 'Our teams did not play yesterday. The players got to rest and get ready for the next game! There are still lots of fun sports stories to read today. Look at the boxes below to see when our teams play next. You can also check out the cool sports news from around the world!',
       source: 'offline',
     };
   }
 
   const winner = game.home.score >= game.away.score ? game.home : game.away;
   const loser = winner === game.home ? game.away : game.home;
-  const locationPhrase = winner.is_home ? 'on their home turf' : 'on the road';
+  const place = winner.is_home ? 'at home' : 'away from home';
   const margin = Math.abs(game.home.score - game.away.score);
 
   const headline = game.headline
-    ? cleanBettingLanguage(game.headline)
-    : `${winner.short_name} Top ${loser.short_name} ${winner.score}-${loser.score} in ${game.league_label} Action`;
+    ? stripEllipsis(cleanBettingLanguage(game.headline))
+    : `${winner.short_name} Beat ${loser.short_name} ${winner.score}-${loser.score}!`;
 
   let opener = '';
   if (isOvertime(game)) {
-    opener = `Fans got bonus action yesterday as the ${winner.name} outlasted the ${loser.name} ${winner.score}-${loser.score} in a thrilling overtime battle ${locationPhrase}!`;
-  } else if (margin <= 2 && ['baseball', 'hockey', 'soccer'].includes(game.sport)) {
-    opener = `Every single play mattered yesterday as the ${winner.name} edged past the ${loser.name} ${winner.score}-${loser.score} in a nail-biting ${game.league_label} showdown ${locationPhrase}.`;
-  } else if (game.sport === 'basketball' && margin <= 5) {
-    opener = `It came right down to the final buzzer as the ${winner.name} held off the ${loser.name} ${winner.score}-${loser.score} in an exciting ${game.league_label} clash ${locationPhrase}.`;
+    opener = `What a fun game! The ${winner.name} beat the ${loser.name} ${winner.score} to ${loser.score} in extra time ${place}.`;
+  } else if (
+    (margin <= 2 && ['baseball', 'hockey', 'soccer'].includes(game.sport)) ||
+    (game.sport === 'basketball' && margin <= 5)
+  ) {
+    opener = `It was a very close game! The ${winner.name} beat the ${loser.name} ${winner.score} to ${loser.score} ${place}.`;
   } else {
-    opener = `The ${winner.name} put together a strong team performance yesterday, defeating the ${loser.name} ${winner.score}-${loser.score} ${locationPhrase} in ${game.league_label} play.`;
+    opener = `The ${winner.name} had a great day! They beat the ${loser.name} ${winner.score} to ${loser.score} ${place}.`;
   }
 
   let middle = '';
-  if (game.milestones.length > 0) {
-    middle = `Leading the charge was an unforgettable effort where ${game.milestones[0]}, giving the ${winner.short_name} all the momentum they needed.`;
-  } else if (winner.leaders.length > 0) {
-    middle = `The ${winner.short_name} got standout contributions across the lineup, led by ${winner.leaders.slice(0, 2).join(' and ')}.`;
+  if (winner.leaders.length > 0) {
+    middle = `Big stars for the ${winner.short_name} were ${winner.leaders.slice(0, 2).join(' and ')}. Everyone helped out!`;
+  } else if (game.milestones.length > 0) {
+    middle = `Big moment in the game: ${game.milestones[0]}. Both teams played hard!`;
   } else {
-    middle = `Smart teamwork and sharp defense helped the ${winner.short_name} take control when the game was on the line.`;
+    middle = `The ${winner.short_name} shared the ball and played strong defense to win.`;
   }
 
   const oppNote = loser.leaders.length
-    ? ` Despite the loss, ${loser.leaders[0]} kept the ${loser.short_name} fighting hard.`
+    ? ` ${loser.leaders[0]} also played hard for the ${loser.short_name}.`
     : '';
   const recNote = winner.record
-    ? ` With the victory, ${winner.short_name} move to ${winner.record} on the season.`
+    ? ` Now the ${winner.short_name} have a ${winner.record} record.`
     : '';
-  const closer = `${oppNote}${recNote} Keep an eye on how both clubs build on this performance in their upcoming matchups!`.trim();
+  const closer = `${oppNote}${recNote} Watch for their next game soon!`.trim();
 
   return {
     kicker: `${game.league_label} TOP STORY`,
     headline,
-    body: cleanBettingLanguage(`${opener} ${middle} ${closer}`),
+    body: stripEllipsis(cleanBettingLanguage(`${opener} ${middle} ${closer}`)),
     source: 'offline',
   };
+}
+
+function createGeminiClient(apiKey: string): GoogleGenAI {
+  return new GoogleGenAI({
+    apiKey,
+    httpOptions: {
+      headers: {
+        'User-Agent': 'aistudio-build',
+      },
+    },
+  });
 }
 
 export async function generateTopStory(
@@ -126,22 +143,20 @@ export async function generateTopStory(
 
   if (game && mode !== 'offline' && apiKey) {
     try {
-      const ai = new GoogleGenAI({
-        apiKey,
-        httpOptions: {
-          headers: {
-            'User-Agent': 'aistudio-build',
-          },
-        },
-      });
+      const ai = createGeminiClient(apiKey);
 
       const prompt = [
-        'Write a kid-friendly newspaper Top Story about the following sports game for a 4th-to-6th grade reader (ages 9-12).',
-        'Keep the tone energetic, clear, and joyful. Strictly NO betting, odds, or gambling terms.',
+        'Write a happy, easy-to-read newspaper Top Story about this sports game for a 1st or 2nd grade child (ages 6-8).',
+        'Rules:',
+        '- Use very simple, everyday words (mostly 1-2 syllables).',
+        '- Write short, clear sentences (6-12 words per sentence).',
+        '- Keep all facts, names, and numbers true to the Game Data.',
+        '- Explain sports terms simply if needed, and strictly NO betting, odds, or gambling words.',
+        "- Do NOT cut off sentences or use '...' or '…'.",
         '',
         'Output exactly two labeled parts:',
-        'HEADLINE: <punchy 6-10 word newspaper headline>',
-        'STORY: <120-160 word story summarizing the action, key players, and final score>',
+        'HEADLINE: <simple, punchy 4-8 word headline>',
+        'STORY: <90-130 word story telling what happened, who starred, and the final score>',
         '',
         'Game Data:',
         buildGameContext(game),
@@ -151,8 +166,9 @@ export async function generateTopStory(
         model: 'gemini-4-hydrogen',
         contents: prompt,
         config: {
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
           systemInstruction:
-            'You are an enthusiastic youth sports journalist writing a morning newspaper front-page story for 9-to-12-year-old readers. Keep stories accurate to the provided box score data, energetic, and between 120 and 160 words.',
+            'You are a friendly youth sports writer making a morning paper for 1st and 2nd grade kids (ages 6-8). Use short sentences, simple words, accurate scores/stats, and 90-130 words.',
         },
       });
 
@@ -171,4 +187,124 @@ export async function generateTopStory(
   }
 
   return generateOfflineStory(game);
+}
+
+export async function summarizeRssHighlights(
+  highlights: HighlightItem[],
+  config: BriefConfig,
+  overrideMode?: string
+): Promise<HighlightItem[]> {
+  const rssEntries = highlights
+    .map((item, index) => ({ item, index }))
+    .filter((entry) => entry.item.kind === 'rss');
+
+  if (rssEntries.length === 0) return highlights;
+
+  const mode = (overrideMode || config.editorial?.llm_mode || 'auto').toLowerCase();
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
+
+  if (mode === 'offline' || !apiKey) {
+    return highlights;
+  }
+
+  const storiesPayload = rssEntries.map(({ item }, seqIdx) => ({
+    id: seqIdx,
+    sport: item.league_label,
+    headline: item.title || '',
+    article: (item.article_text || item.summary || item.title || '').slice(0, 1800),
+  }));
+
+  const prompt = [
+    'Summarize each sports story below for a 1st or 2nd grade child (ages 6-8) to read in a printed morning newspaper.',
+    'Rules for EVERY item:',
+    '- Write at a 1st or 2nd grade reading level: short, simple words and short sentences.',
+    '- Summarize the whole headline and article clearly so NOTHING is cut off.',
+    "- NEVER use '...' or '…' or trail off.",
+    '- Keep all names, places, and facts true to the provided article.',
+    '- Strictly NO betting, odds, or gambling words.',
+    '- id: Copy the exact numeric id from the input story.',
+    '- title: A complete, punchy headline (5-9 simple words, under 60 characters).',
+    '- summary: 1 to 2 complete short sentences (14-24 words total) ending with a period or exclamation mark.',
+    '',
+    'Stories:',
+    JSON.stringify(storiesPayload),
+  ].join('\n');
+
+  const ai = createGeminiClient(apiKey);
+  try {
+    const geminiCall = ai.models.generateContent({
+      model: 'gemini-4-hydrogen',
+      contents: prompt,
+      config: {
+        systemInstruction:
+          'You summarize sports news for 1st and 2nd grade readers (ages 6-8) into crisp, complete headlines and 1-2 short sentences with zero truncation.',
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            items: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.INTEGER },
+                  title: { type: Type.STRING },
+                  summary: { type: Type.STRING },
+                },
+                required: ['id', 'title', 'summary'],
+              },
+            },
+          },
+          required: ['items'],
+        },
+      },
+    });
+
+    const timeoutGuard = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Gemini RSS summarization timed out')), 25000)
+    );
+    const response = await Promise.race([geminiCall, timeoutGuard]);
+
+    const parsed = JSON.parse(response.text || '{}') as {
+      items?: Array<{ id?: number; title?: string; summary?: string }>;
+    };
+    const entries = parsed.items || [];
+    if (entries.length === 0) return highlights;
+
+    const byId = new Map<number, { title?: string; summary?: string }>();
+    entries.forEach((entry, pos) => {
+      const key = typeof entry.id === 'number' ? entry.id : pos;
+      byId.set(key, entry);
+    });
+
+    const seqByHighlightIndex = new Map<number, number>();
+    rssEntries.forEach(({ index }, seqIdx) => {
+      seqByHighlightIndex.set(index, seqIdx);
+    });
+
+    return highlights.map((item, idx) => {
+      if (item.kind !== 'rss') return item;
+      const seqIdx = seqByHighlightIndex.get(idx);
+      const rewritten =
+        (seqIdx !== undefined ? byId.get(seqIdx) : undefined) ||
+        (seqIdx !== undefined ? entries[seqIdx] : undefined);
+      if (!rewritten) return item;
+
+      const cleanTitle = stripEllipsis(cleanBettingLanguage(rewritten.title || ''));
+      let cleanSummary = stripEllipsis(cleanBettingLanguage(rewritten.summary || ''));
+      if (cleanSummary && !/[.!?]$/.test(cleanSummary)) {
+        cleanSummary += '.';
+      }
+
+      return {
+        ...item,
+        title: cleanTitle || item.title,
+        summary: cleanSummary || item.summary,
+      };
+    });
+  } catch (err) {
+    console.warn('Gemini RSS summarization fell back to clean sentence excerpts:', err);
+  }
+
+  return highlights;
 }

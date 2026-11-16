@@ -6,7 +6,7 @@ import { dump as yamlDump, load as yamlLoad } from 'js-yaml';
 import JSZip from 'jszip';
 import { createServer as createViteServer } from 'vite';
 import { curateEdition, fetchLeagueTeams } from './server/espnService.ts';
-import { generateTopStory } from './server/editorialService.ts';
+import { generateTopStory, summarizeRssHighlights } from './server/editorialService.ts';
 import { compileStandaloneHtml } from './server/htmlCompiler.ts';
 import type {
   BriefConfig,
@@ -160,7 +160,10 @@ async function buildEditionPayload(params: {
   }
 
   const curated = await curateEdition(config, dates.yesterdayYyyymmdd, dates.todayYyyymmdd);
-  const topStory = await generateTopStory(curated.lead_game, config, params.storyMode);
+  const [topStory, summarizedHighlights] = await Promise.all([
+    generateTopStory(curated.lead_game, config, params.storyMode),
+    summarizeRssHighlights(curated.highlights, config, params.storyMode),
+  ]);
   const leadImage = params.factId ? null : (curated.lead_game?.lead_image ?? null);
 
   return {
@@ -176,7 +179,7 @@ async function buildEditionPayload(params: {
     fact_of_day: fact,
     favorite_items: curated.favorite_items,
     interesting_games: curated.interesting_games,
-    highlights: curated.highlights,
+    highlights: summarizedHighlights,
     lead_game: curated.lead_game,
     gemini_available: Boolean(process.env.GEMINI_API_KEY?.trim()),
   };
@@ -386,7 +389,12 @@ async function startServer() {
     app.use(vite.middlewares);
   }
 
-  const port = Number(process.env.PORT || 3000);
+  const portArgIndex = process.argv.indexOf('--port');
+  const parsedPortArg =
+    portArgIndex >= 0 && process.argv[portArgIndex + 1]
+      ? Number(process.argv[portArgIndex + 1])
+      : NaN;
+  const port = Number.isFinite(parsedPortArg) && parsedPortArg > 0 ? parsedPortArg : 3000;
   app.listen(port, '0.0.0.0', () => {
     console.log(`Morning Sports Brief Studio running on http://0.0.0.0:${port}`);
   });

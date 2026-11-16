@@ -14,7 +14,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from premailer import Premailer
 
 from curator import curate_edition
-from editorial import generate_top_story, pick_fact_of_the_day
+from editorial import generate_top_story, pick_fact_of_the_day, summarize_rss_highlights
 from fetchers import LeadImage, get_fetcher
 
 logging.basicConfig(
@@ -107,6 +107,7 @@ def main() -> None:
 
     lead_game = curated["lead_game"]
     top_story = generate_top_story(lead_game, config)
+    curated["interesting_games"] = summarize_rss_highlights(curated["interesting_games"], config)
 
     # Attempt to embed lead game image; fall back to Sports Fact of the Day if unavailable
     timeout = int(config.get("data_provider", {}).get("timeout_seconds", 12))

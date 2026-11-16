@@ -230,157 +230,132 @@ export const BroadsheetView: React.FC<BroadsheetViewProps> = ({
           </section>
 
           {/* Middle Row: Your Teams (Priority 1) */}
-          <section className="mb-3.5">
-            <div className="mb-2 flex items-baseline justify-between border-b-2 border-[#111111] pb-0.5">
-              <h3 className="text-[12.5px] font-extrabold tracking-wider text-[#111111]">
-                YOUR TEAMS — YESTERDAY&apos;S BOX SCORES
-              </h3>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#333333]">
-                {edition.yesterday_display}
-              </span>
-            </div>
+          {(() => {
+            const playedFavorites = edition.favorite_items.filter((item) => Boolean(item.game));
+            if (playedFavorites.length === 0) return null;
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {edition.favorite_items.map((item) => {
-                const g = item.game;
-                if (!g) {
-                  return (
-                    <div
-                      key={`${item.team_config.league}-${item.team_config.espn_team_id}`}
-                      className="broadsheet-card border border-dashed border-[#111111] bg-[#FAFAFA] p-2.5"
-                    >
-                      <div className="mb-1.5 flex items-center justify-between text-[10px]">
-                        <span className="bg-[#111111] px-1.5 py-0.5 font-extrabold tracking-wider text-white">
-                          {item.upcoming.league_label}
-                        </span>
-                        <span className="font-bold uppercase text-[#333333]">NO GAME YESTERDAY</span>
-                      </div>
-                      <div className="font-display text-[15px] font-bold text-[#111111]">
-                        {item.team_config.name}
-                      </div>
-                      {item.upcoming.record && (
-                        <div className="mb-1 text-[11px] text-[#444444]">
-                          Season Record: {item.upcoming.record}
+            return (
+              <section className="mb-3.5">
+                <div className="mb-2 flex items-baseline justify-between border-b-2 border-[#111111] pb-0.5">
+                  <h3 className="text-[12.5px] font-extrabold tracking-wider text-[#111111]">
+                    YOUR TEAMS — YESTERDAY&apos;S BOX SCORES
+                  </h3>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#333333]">
+                    {edition.yesterday_display}
+                  </span>
+                </div>
+
+                <div
+                  className={`grid grid-cols-1 gap-3 ${
+                    playedFavorites.length === 1 ? 'sm:grid-cols-1' : 'sm:grid-cols-2'
+                  }`}
+                >
+                  {playedFavorites.map((item) => {
+                    const g = item.game!;
+                    const maxCols = Math.max(g.away.linescores.length, g.home.linescores.length);
+                    const favBox = g.home.team_id === g.favorite_team_id ? g.home : g.away;
+                    const oppBox = favBox === g.home ? g.away : g.home;
+
+                    return (
+                      <div
+                        key={g.event_id}
+                        className="broadsheet-card border border-[#111111] bg-white p-2.5"
+                      >
+                        <div className="mb-1.5 flex items-center justify-between text-[10px]">
+                          <span className="bg-[#111111] px-1.5 py-0.5 font-extrabold tracking-wider text-white">
+                            {g.league_label}
+                          </span>
+                          <span className="font-bold uppercase text-[#111111]">{g.status_detail}</span>
                         </div>
-                      )}
-                      <div className="text-[11px] text-[#111111]">
-                        {item.upcoming.status_type === 'offseason' ? (
-                          <>
-                            <strong>Status:</strong> {item.upcoming.matchup}
-                          </>
-                        ) : (
-                          <>
-                            <strong>Next Up:</strong> {item.upcoming.matchup} —{' '}
-                            {item.upcoming.time_display}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  );
-                }
 
-                const maxCols = Math.max(g.away.linescores.length, g.home.linescores.length);
-                const favBox = g.home.team_id === g.favorite_team_id ? g.home : g.away;
-                const oppBox = favBox === g.home ? g.away : g.home;
+                        <table className="mb-1.5 w-full border-collapse font-tabular text-[11px]">
+                          <thead>
+                            <tr className="border-b-[1.5px] border-[#111111] text-[9.5px] text-[#444444]">
+                              <th className="py-0.5 text-left font-bold">TEAM</th>
+                              {Array.from({ length: maxCols }).map((_, idx) => (
+                                <th key={idx} className="px-1 py-0.5 text-center font-semibold">
+                                  {getPeriodLabel(g, idx)}
+                                </th>
+                              ))}
+                              <th className="border-l border-[#111111] bg-[#F4F4F4] px-1.5 py-0.5 text-center font-extrabold text-[#111111]">
+                                F
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr
+                              className={`border-b border-[#D4D4D4] ${
+                                g.away.winner ? 'font-extrabold' : ''
+                              }`}
+                            >
+                              <td className="py-0.5 pr-1 text-left whitespace-nowrap">
+                                <span>{g.away.abbreviation}</span>{' '}
+                                {g.away.record && (
+                                  <span className="text-[9.5px] font-normal text-[#444444]">
+                                    ({g.away.record})
+                                  </span>
+                                )}
+                              </td>
+                              {Array.from({ length: maxCols }).map((_, idx) => (
+                                <td key={idx} className="px-1 py-0.5 text-center">
+                                  {idx < g.away.linescores.length ? g.away.linescores[idx] : '-'}
+                                </td>
+                              ))}
+                              <td className="border-l border-[#111111] bg-[#F4F4F4] px-1.5 py-0.5 text-center font-extrabold">
+                                {g.away.score}
+                              </td>
+                            </tr>
+                            <tr
+                              className={`border-b border-[#D4D4D4] ${
+                                g.home.winner ? 'font-extrabold' : ''
+                              }`}
+                            >
+                              <td className="py-0.5 pr-1 text-left whitespace-nowrap">
+                                <span>{g.home.abbreviation}</span>{' '}
+                                {g.home.record && (
+                                  <span className="text-[9.5px] font-normal text-[#444444]">
+                                    ({g.home.record})
+                                  </span>
+                                )}
+                              </td>
+                              {Array.from({ length: maxCols }).map((_, idx) => (
+                                <td key={idx} className="px-1 py-0.5 text-center">
+                                  {idx < g.home.linescores.length ? g.home.linescores[idx] : '-'}
+                                </td>
+                              ))}
+                              <td className="border-l border-[#111111] bg-[#F4F4F4] px-1.5 py-0.5 text-center font-extrabold">
+                                {g.home.score}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
 
-                return (
-                  <div
-                    key={g.event_id}
-                    className="broadsheet-card border border-[#111111] bg-white p-2.5"
-                  >
-                    <div className="mb-1.5 flex items-center justify-between text-[10px]">
-                      <span className="bg-[#111111] px-1.5 py-0.5 font-extrabold tracking-wider text-white">
-                        {g.league_label}
-                      </span>
-                      <span className="font-bold uppercase text-[#111111]">{g.status_detail}</span>
-                    </div>
-
-                    <table className="mb-1.5 w-full border-collapse font-tabular text-[11px]">
-                      <thead>
-                        <tr className="border-b-[1.5px] border-[#111111] text-[9.5px] text-[#444444]">
-                          <th className="py-0.5 text-left font-bold">TEAM</th>
-                          {Array.from({ length: maxCols }).map((_, idx) => (
-                            <th key={idx} className="px-1 py-0.5 text-center font-semibold">
-                              {getPeriodLabel(g, idx)}
-                            </th>
-                          ))}
-                          <th className="border-l border-[#111111] bg-[#F4F4F4] px-1.5 py-0.5 text-center font-extrabold text-[#111111]">
-                            F
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr
-                          className={`border-b border-[#D4D4D4] ${
-                            g.away.winner ? 'font-extrabold' : ''
-                          }`}
-                        >
-                          <td className="py-0.5 pr-1 text-left whitespace-nowrap">
-                            <span>{g.away.abbreviation}</span>{' '}
-                            {g.away.record && (
-                              <span className="text-[9.5px] font-normal text-[#444444]">
-                                ({g.away.record})
-                              </span>
-                            )}
-                          </td>
-                          {Array.from({ length: maxCols }).map((_, idx) => (
-                            <td key={idx} className="px-1 py-0.5 text-center">
-                              {idx < g.away.linescores.length ? g.away.linescores[idx] : '-'}
-                            </td>
-                          ))}
-                          <td className="border-l border-[#111111] bg-[#F4F4F4] px-1.5 py-0.5 text-center font-extrabold">
-                            {g.away.score}
-                          </td>
-                        </tr>
-                        <tr
-                          className={`border-b border-[#D4D4D4] ${
-                            g.home.winner ? 'font-extrabold' : ''
-                          }`}
-                        >
-                          <td className="py-0.5 pr-1 text-left whitespace-nowrap">
-                            <span>{g.home.abbreviation}</span>{' '}
-                            {g.home.record && (
-                              <span className="text-[9.5px] font-normal text-[#444444]">
-                                ({g.home.record})
-                              </span>
-                            )}
-                          </td>
-                          {Array.from({ length: maxCols }).map((_, idx) => (
-                            <td key={idx} className="px-1 py-0.5 text-center">
-                              {idx < g.home.linescores.length ? g.home.linescores[idx] : '-'}
-                            </td>
-                          ))}
-                          <td className="border-l border-[#111111] bg-[#F4F4F4] px-1.5 py-0.5 text-center font-extrabold">
-                            {g.home.score}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-
-                    <div className="border-t border-[#CCCCCC] pt-1 text-[10.5px] leading-snug">
-                      {favBox.leaders.length > 0 && (
-                        <div>
-                          <div className="text-[9.5px] font-extrabold tracking-wide text-[#111111]">
-                            {favBox.abbreviation} LEADERS:
-                          </div>
-                          {favBox.leaders.slice(0, 3).map((line, i) => (
-                            <div key={i} className="truncate">
-                              {line}
+                        <div className="border-t border-[#CCCCCC] pt-1 text-[10.5px] leading-snug">
+                          {favBox.leaders.length > 0 && (
+                            <div>
+                              <div className="text-[9.5px] font-extrabold tracking-wide text-[#111111]">
+                                {favBox.abbreviation} LEADERS:
+                              </div>
+                              {favBox.leaders.slice(0, 3).map((line, i) => (
+                                <div key={i} className="truncate">
+                                  {line}
+                                </div>
+                              ))}
                             </div>
-                          ))}
+                          )}
+                          {oppBox.leaders.length > 0 && (
+                            <div className="mt-0.5 truncate text-[#333333]">
+                              <strong>{oppBox.abbreviation}:</strong> {oppBox.leaders[0]}
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {oppBox.leaders.length > 0 && (
-                        <div className="mt-0.5 truncate text-[#333333]">
-                          <strong>{oppBox.abbreviation}:</strong> {oppBox.leaders[0]}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })()}
 
           {/* Bottom Row: Around the World of Sports */}
           <section className="mb-3">

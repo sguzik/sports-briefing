@@ -493,6 +493,8 @@ class ESPNFetcher(BaseFetcher):
         league = fav_team["league"]
         team_id = str(fav_team["espn_team_id"])
         tz = ZoneInfo(tz_name)
+        window_days = int(self.config.get("curation", {}).get("upcoming_window_days", 14))
+        today_date = datetime.strptime(today_yyyymmdd, "%Y%m%d").date()
 
         url = f"{ESPN_BASE}/{sport}/{league}/teams/{team_id}"
         data = self._get_json(url)
@@ -511,6 +513,7 @@ class ESPNFetcher(BaseFetcher):
                 dt_utc = datetime.fromisoformat(ev_date_str.replace("Z", "+00:00"))
                 dt_local = dt_utc.astimezone(tz)
                 local_yyyymmdd = dt_local.strftime("%Y%m%d")
+                days_away = (dt_local.date() - today_date).days
                 time_fmt = dt_local.strftime("%-I:%M %p ET")
 
                 if local_yyyymmdd == today_yyyymmdd:
@@ -524,16 +527,28 @@ class ESPNFetcher(BaseFetcher):
                         record=record_str,
                     )
 
-                day_fmt = dt_local.strftime("%a, %b %-d")
-                return UpcomingEvent(
-                    team_name=fav_team["name"],
-                    short_name=fav_team.get("short_name", fav_team["name"]),
-                    league_label=league.upper(),
-                    status_type="upcoming",
-                    matchup=matchup,
-                    time_display=f"{day_fmt} at {time_fmt}",
-                    record=record_str,
-                )
+                if 0 < days_away <= window_days:
+                    day_fmt = dt_local.strftime("%a, %b %-d")
+                    return UpcomingEvent(
+                        team_name=fav_team["name"],
+                        short_name=fav_team.get("short_name", fav_team["name"]),
+                        league_label=league.upper(),
+                        status_type="upcoming",
+                        matchup=matchup,
+                        time_display=f"{day_fmt} at {time_fmt}",
+                        record=record_str,
+                    )
+
+                if days_away > window_days:
+                    return UpcomingEvent(
+                        team_name=fav_team["name"],
+                        short_name=fav_team.get("short_name", fav_team["name"]),
+                        league_label=league.upper(),
+                        status_type="offseason",
+                        matchup="Off-Season",
+                        time_display="Off-Season",
+                        record=record_str,
+                    )
 
         today_games = self.fetch_scoreboard(sport, league, league.upper(), today_yyyymmdd)
         for g in today_games:
@@ -555,7 +570,7 @@ class ESPNFetcher(BaseFetcher):
             short_name=fav_team.get("short_name", fav_team["name"]),
             league_label=league.upper(),
             status_type="offseason",
-            matchup="No games currently scheduled (Off-Season)",
-            time_display="Check back soon",
+            matchup="Off-Season",
+            time_display="Off-Season",
             record=record_str,
         )

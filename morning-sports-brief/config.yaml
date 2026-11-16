@@ -13,11 +13,13 @@ editorial:
   llm_mode: "auto"
   gemini_model: "gemini-4-hydrogen"
   openai_model: "gpt-4o-mini"
-  target_word_count: "120-160"
+  reading_level: "1st-2nd grade"
+  target_word_count: "90-130"
 
 curation:
   max_interesting_games: 6
   min_interesting_games: 4
+  upcoming_window_days: 14
 
 # Priority 1: Full Mini-Box Scores + Upcoming Schedule
 favorite_teams:

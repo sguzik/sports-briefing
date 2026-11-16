@@ -80,6 +80,8 @@ class HighlightItem:
     game: Optional[GameRecord] = None
     title: str = ""
     summary: str = ""
+    link: str = ""
+    article_text: str = ""
     sort_score: int = 0
 
 

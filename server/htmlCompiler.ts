@@ -65,30 +65,11 @@ export async function compileStandaloneHtml(edition: EditionPayload): Promise<st
   const cssText = fs.existsSync(cssPath) ? fs.readFileSync(cssPath, 'utf-8') : '';
   const embeddedPhoto = await fetchImageAsDataUri(edition.lead_image);
 
-  const favoriteCardsHtml = edition.favorite_items
+  const playedFavorites = edition.favorite_items.filter((item) => Boolean(item.game));
+
+  const favoriteCardsHtml = playedFavorites
     .map((item) => {
-      if (!item.game) {
-        const recordLine = item.upcoming.record
-          ? `<div class="idle-record">Season Record: ${escapeHtml(item.upcoming.record)}</div>`
-          : '';
-        const nextLine =
-          item.upcoming.status_type === 'offseason'
-            ? `<strong>Status:</strong> ${escapeHtml(item.upcoming.matchup)}`
-            : `<strong>Next Up:</strong> ${escapeHtml(item.upcoming.matchup)} — ${escapeHtml(item.upcoming.time_display)}`;
-
-        return `
-        <div class="game-card game-card-idle">
-          <div class="card-top-meta">
-            <span class="league-pill">${escapeHtml(item.upcoming.league_label)}</span>
-            <span class="status-pill status-idle">NO GAME YESTERDAY</span>
-          </div>
-          <div class="idle-team-name">${escapeHtml(item.team_config.name)}</div>
-          ${recordLine}
-          <div class="idle-next">${nextLine}</div>
-        </div>`;
-      }
-
-      const g = item.game;
+      const g = item.game!;
       const maxCols = Math.max(g.away.linescores.length, g.home.linescores.length);
       const favBox = g.home.team_id === g.favorite_team_id ? g.home : g.away;
       const oppBox = favBox === g.home ? g.away : g.home;
@@ -275,15 +256,19 @@ ${cssText}
       }
     </section>
 
-    <section class="section-block">
+    ${
+      playedFavorites.length > 0
+        ? `<section class="section-block">
       <div class="section-header">
         <h3>YOUR TEAMS — YESTERDAY'S BOX SCORES</h3>
         <span class="section-sub">${escapeHtml(edition.yesterday_display)}</span>
       </div>
-      <div class="favorites-grid">
+      <div class="favorites-grid${playedFavorites.length === 1 ? ' favorites-grid-single' : ''}">
         ${favoriteCardsHtml}
       </div>
-    </section>
+    </section>`
+        : ''
+    }
 
     <section class="section-block">
       <div class="section-header">

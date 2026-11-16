@@ -198,6 +198,10 @@ body {
   gap: 9pt;
 }
 
+.favorites-grid-single {
+  grid-template-columns: 1fr;
+}
+
 .game-card {
   border: 1.25px solid #111111;
   padding: 6.5pt 7.5pt;
