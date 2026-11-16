@@ -33,11 +33,15 @@ Copy the exact printer name (for example, `Brother_HL_L2350DW_series`).
    chmod +x ~/morning-sports-brief/print_brief.sh
    ```
 
-2. Run a dry-run test (generates a PDF without printing):
+2. Run a dry-run test (generates a PDF without printing) using either your GitHub Pages URL or a local `latest.html` file:
 
    ```bash
+   # From GitHub Pages:
    BRIEF_URL="https://YOUR_GITHUB_USERNAME.github.io/morning-sports-brief/latest.html" \
      ~/morning-sports-brief/print_brief.sh --dry-run
+
+   # Or from a local file:
+   ~/morning-sports-brief/print_brief.sh --dry-run --file ../dist/latest.html
    ```
 
    Open `/tmp/morning_sports_brief_*.pdf` to verify the US Letter layout.

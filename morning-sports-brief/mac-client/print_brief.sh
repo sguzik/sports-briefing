@@ -14,20 +14,41 @@ CHROME_BIN="${CHROME_BIN:-/Applications/Google Chrome.app/Contents/MacOS/Google 
 
 DRY_RUN=false
 FORCE_PRINT=false
+INPUT_FILE=""
 
-for arg in "$@"; do
-  case "$arg" in
+while [[ $# -gt 0 ]]; do
+  case "$1" in
     --dry-run)
       DRY_RUN=true
+      shift
       ;;
     --force)
       FORCE_PRINT=true
+      shift
+      ;;
+    --file)
+      if [[ $# -lt 2 ]]; then
+        echo "ERROR: --file requires a path argument." >&2
+        exit 1
+      fi
+      INPUT_FILE="$2"
+      shift 2
       ;;
     -h|--help)
-      echo "Usage: $0 [--dry-run] [--force]"
-      echo "  --dry-run   Generate latest.pdf in /tmp without sending to printer or updating state"
-      echo "  --force     Print even if today's edition-date was already printed"
+      echo "Usage: $0 [--dry-run] [--force] [--file /path/to/latest.html]"
+      echo "  --dry-run       Generate latest.pdf in /tmp without sending to printer or updating state"
+      echo "  --force         Print even if today's edition-date was already printed"
+      echo "  --file <path>   Render from a local HTML file instead of fetching BRIEF_URL"
       exit 0
+      ;;
+    *)
+      if [[ -z "$INPUT_FILE" && "$1" != -* ]]; then
+        INPUT_FILE="$1"
+        shift
+      else
+        echo "ERROR: Unknown argument: $1" >&2
+        exit 1
+      fi
       ;;
   esac
 done
@@ -43,13 +64,75 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 HTML_FILE="$TMP_DIR/latest.html"
 PDF_FILE="$TMP_DIR/latest.pdf"
 
-CURL_ARGS=(-fsSL --retry 3 --retry-delay 5)
-if [[ -n "$GITHUB_TOKEN" ]]; then
-  CURL_ARGS+=(-H "Authorization: Bearer $GITHUB_TOKEN")
+SOURCE_TARGET="${INPUT_FILE:-$BRIEF_URL}"
+# Trim leading/trailing whitespace and expand leading ~/
+SOURCE_TARGET="${SOURCE_TARGET#"${SOURCE_TARGET%%[![:space:]]*}"}"
+SOURCE_TARGET="${SOURCE_TARGET%"${SOURCE_TARGET##*[![:space:]]}"}"
+if [[ "$SOURCE_TARGET" == "~/"* ]]; then
+  SOURCE_TARGET="$HOME/${SOURCE_TARGET#\~/}"
 fi
 
-echo "Fetching $BRIEF_URL ..."
-curl "${CURL_ARGS[@]}" "$BRIEF_URL" -o "$HTML_FILE"
+resolve_local_file() {
+  local raw="$1"
+  local candidate=""
+
+  if [[ "$raw" == file://* ]]; then
+    candidate="${raw#file://}"
+    candidate="${candidate#localhost}"
+    if [[ "$candidate" == "~/"* ]]; then
+      candidate="$HOME/${candidate#\~/}"
+    fi
+    # Handle missing third slash like file://Users/name/file.html
+    if [[ ! -e "$candidate" && "$candidate" != /* && -e "/$candidate" ]]; then
+      candidate="/$candidate"
+    fi
+    echo "$candidate"
+    return 0
+  fi
+
+  if [[ "$raw" == file:* ]]; then
+    candidate="${raw#file:}"
+    echo "$candidate"
+    return 0
+  fi
+
+  if [[ "$raw" != http://* && "$raw" != https://* ]]; then
+    if [[ -e "$raw" || "$raw" == /* || "$raw" == ./* || "$raw" == ../* || "$raw" == *.html || "$raw" == *.htm ]]; then
+      echo "$raw"
+      return 0
+    fi
+  fi
+
+  return 1
+}
+
+if LOCAL_PATH="$(resolve_local_file "$SOURCE_TARGET")"; then
+  if [[ ! -f "$LOCAL_PATH" ]]; then
+    echo "ERROR: Local HTML file not found: $LOCAL_PATH" >&2
+    exit 1
+  fi
+  echo "Loading local file $LOCAL_PATH ..."
+  cp "$LOCAL_PATH" "$HTML_FILE"
+else
+  # Normalize localhost/127.0.0.1 URLs missing an explicit http:// scheme
+  if [[ "$SOURCE_TARGET" == localhost:* || "$SOURCE_TARGET" == 127.0.0.1:* ]]; then
+    SOURCE_TARGET="http://$SOURCE_TARGET"
+  fi
+
+  if [[ "$SOURCE_TARGET" == *"YOUR_GITHUB_USERNAME"* || "$SOURCE_TARGET" == *"<"* || "$SOURCE_TARGET" == *">"* ]]; then
+    echo "ERROR: BRIEF_URL is still a placeholder ($SOURCE_TARGET)." >&2
+    echo "Set BRIEF_URL to your GitHub Pages URL or pass --file /path/to/latest.html." >&2
+    exit 1
+  fi
+
+  CURL_ARGS=(-fsSL --retry 3 --retry-delay 5)
+  if [[ -n "$GITHUB_TOKEN" ]]; then
+    CURL_ARGS+=(-H "Authorization: Bearer $GITHUB_TOKEN")
+  fi
+
+  echo "Fetching $SOURCE_TARGET ..."
+  curl "${CURL_ARGS[@]}" "$SOURCE_TARGET" -o "$HTML_FILE"
+fi
 
 EDITION_DATE="$(grep -i '<meta[^>]*name=["'\'']edition-date["'\'']' "$HTML_FILE" | sed -E 's/.*content=["'\'']([^"'\'']+)["'\''].*/\1/' | head -n 1 || true)"
 
