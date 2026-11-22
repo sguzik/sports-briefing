@@ -1,10 +1,11 @@
 {
-  "edition_number": 7,
+  "edition_number": 8,
   "used_fact_ids": [
     "fact-01",
     "fact-02",
     "fact-03",
-    "fact-04"
+    "fact-04",
+    "fact-05"
   ],
-  "last_edition_date": "2026-11-21"
+  "last_edition_date": "2026-11-22"
 }
